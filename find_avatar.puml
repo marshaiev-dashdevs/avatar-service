@@ -1,0 +1,51 @@
+@startuml
+title Sequence Diagram: Avatar Search and Save Process
+
+database Database
+participant TowerService
+participant AvatarManager
+participant SlackAvatarSearcher
+participant S3AvatarStorage
+
+activate TowerService
+
+TowerService -> AvatarManager: Request to find avatar for user
+activate AvatarManager
+
+AvatarManager -> SlackAvatarSearcher: Request to find avatar by email
+activate SlackAvatarSearcher
+
+alt Slack avatar found
+    SlackAvatarSearcher --> AvatarManager: Avatar path
+    deactivate SlackAvatarSearcher
+    AvatarManager -> S3AvatarStorage: Upload avatar to S3
+    activate S3AvatarStorage
+
+    alt Avatar uploaded successfully to S3
+        S3AvatarStorage --> AvatarManager: S3 file path
+        deactivate S3AvatarStorage
+        AvatarManager --> TowerService: Avatar path
+        deactivate AvatarManager
+        activate TowerService
+    else Avatar upload to S3 failed
+        S3AvatarStorage --> AvatarManager: null
+        deactivate S3AvatarStorage
+        AvatarManager --> TowerService: null
+        deactivate AvatarManager
+    end
+else Slack avatar not found
+    SlackAvatarSearcher --> AvatarManager: null
+    deactivate SlackAvatarSearcher
+    AvatarManager --> TowerService: null
+    deactivate AvatarManager
+end
+opt Avatar path
+    TowerService -> Database: Save avatar path to database
+    activate Database
+    Database --> TowerService: Confirmation
+    deactivate Database
+end
+deactivate TowerService
+
+
+@enduml
