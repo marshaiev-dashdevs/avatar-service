@@ -1,0 +1,55 @@
+@startuml
+
+!define AVATAR_MANAGER_SERVICE avatar_manager_service
+!define AVATAR_SEARCHER_SERVICE AVATAR_MANAGER_SERVICE.avatar_searcher_service
+!define AVATAR_STORAGE_SERVICE AVATAR_MANAGER_SERVICE.avatar_storage_service
+
+class "IAvatarSearchService" {
+    +find_avatar_by_email(email: str): Optional[str]
+}
+
+class "SlackAvatarSearcher" {
+    -client: WebClient
+    +SlackAvatarSearcher(token: str)
+    +find_avatar_by_email(email: str): Optional[str]
+}
+
+class "MockAvatarSearcher" {
+    +find_avatar_by_email(email: str): Optional[str]
+}
+
+class "IAvatarStorage" {
+    +upload_avatar(avatar_url: str): Optional[str]
+    +generate_temporary_link(file_path: str): Optional[str]
+}
+
+class "S3AvatarStorage" {
+    -bucket_name: str
+    -s3_client: S3Client
+    +S3AvatarStorage(bucket_name: str, s3_client: S3Client)
+    +upload_avatar(avatar_url: str): Optional[str]
+    +generate_temporary_link(s3_file_path: str): Optional[str]
+    +handle_s3_exceptions(func)
+}
+
+class "MockAvatarStorage" {
+    +upload_avatar(avatar_url: str): Optional[str]
+    +generate_temporary_link(file_path: str): Optional[str]
+}
+
+class "AvatarManager" {
+    -avatar_searcher: IAvatarSearchService
+    -avatar_storage: IAvatarStorage
+    +AvatarManager(avatar_storage: IAvatarStorage, avatar_searcher: IAvatarSearchService)
+    +find_and_store_user_avatar(user_email: str): Optional[str]
+    +generate_temporary_link(file_path: str)
+}
+
+"AvatarManager" --> "IAvatarSearchService"
+"AvatarManager" --> "IAvatarStorage"
+"SlackAvatarSearcher" ..> "IAvatarSearchService"
+"MockAvatarSearcher" ..> "IAvatarSearchService"
+"IAvatarStorage" ..> "S3AvatarStorage"
+"IAvatarStorage" ..> "MockAvatarStorage"
+"S3AvatarStorage" ..> "handle_s3_exceptions": <<use>>
+@enduml

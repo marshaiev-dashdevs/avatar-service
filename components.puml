@@ -1,0 +1,31 @@
+@startuml
+
+!define AVATAR_MANAGER_SERVICE avatar_manager_service
+!define AVATAR_SEARCHER_SERVICE AVATAR_MANAGER_SERVICE.avatar_searcher_service
+!define AVATAR_STORAGE_SERVICE AVATAR_MANAGER_SERVICE.avatar_storage_service
+
+package "avatar_manager_service" {
+    [AvatarManager]
+
+    package "avatar_searcher_service" {
+        [IAvatarSearchService]
+        [SlackAvatarSearcher]
+        [MockAvatarSearcher]
+    }
+
+    package "avatar_storage_service" {
+        [IAvatarStorage]
+        [S3AvatarStorage]
+        [MockAvatarStorage]
+    }
+
+    AvatarManager --> IAvatarSearchService
+    AvatarManager --> IAvatarStorage
+
+    IAvatarSearchService --> SlackAvatarSearcher
+    IAvatarSearchService --> MockAvatarSearcher
+    IAvatarStorage --> S3AvatarStorage
+    IAvatarStorage --> MockAvatarStorage
+}
+
+@enduml
